@@ -1,4 +1,4 @@
-# [literate-programming-cli-test](# "version:0.2.0; Testing framework for literate-programming-cli")
+# [literate-programming-cli-test](# "version:0.3.0; Testing framework for literate-programming-cli")
 
  
 * [index.js](#testing "save: | jshint") This runs the test for this module.
@@ -59,21 +59,21 @@ in it should match the generated stuff in the top directory.
     var isUtf8 = require('is-utf8');
     var tape = require('tape');
 
+    var deepEquals =  require('deep-equal');
+
+
+
     module.exports = function (litpro) {
         if (typeof litpro === "undefined") {
             litpro = 'node ../../node_modules/literate-programming-cli/litpro.js';
         }
 
-        
-      
-
-    
         var equals = _":buffer equals";
         var readdir = _":recursive readdir";
         var checkdir = _":checking dir equality";
         var test = _":test";
 
-        return function () {
+        var tests = function () {
             var i, n = arguments.length;
 
             for (i = 0; i < n; i += 1) {
@@ -82,8 +82,61 @@ in it should match the generated stuff in the top directory.
 
         };
 
+        tests.json = _":json";
+
+        tests.split = _":split";
+
+        return tests;
+
     };
 
+
+[json]() 
+
+This tests if the two files are JSON files and equal.
+
+     function (can, bui) {
+            try {
+                can = JSON.parse(can.toString());
+                bui = JSON.parse(bui.toString());
+                return deepEquals(can, bui);
+            } catch (e) {
+                console.log(e);
+                return false;
+            }
+        }
+
+[split]()
+
+This will split the given text into lines, check the same number of lines,
+sort them, and then apply a matching function if provided for each line. The
+default is equality of the lines.
+
+This is constructor whose argument is the matcher. 
+
+    function (optional) {
+        var equals = optional || function (a, b) {
+            return a === b;
+        };
+
+        return function (can , bui) {
+            can = can.toString().split("\n").sort();
+            bui = bui.toString().split("\n").sort();
+            
+            if ( can.length !== bui.length) {
+                return false;
+            }
+
+            var i, n = can.length;
+            for (i = 0; i < n; i +=1) {
+                if ( !  equals(can[i], bui[i]) ) {
+                    return false;
+                } 
+            }
+
+            return true;
+        };
+    }
 
 
 [test]()
@@ -255,10 +308,21 @@ A simple test file
                 bui = bui.toString().replace("hi", "bye");
                 return bui === can.toString();
             }
-        }]
+        }],
+        ["json",  "", _":json"],
+        ["scrambled", "", _":scrambled"]
     );
 
 
+[json]() 
+
+Testing the json stuff
+
+    {   "stuff.json" : tests.json }
+
+[scrambled]()
+
+    { "scrambled.txt" : tests.split() }
 
 
 [off](# "block:")
@@ -441,6 +505,6 @@ A travis.yml file for continuous test integration!
 
 
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
-    deps: tape 3.5.0, del 1.1.1, is-utf8 0.2.0;
+    deps: tape 3.5.0, del 1.1.1, is-utf8 0.2.0, deep-equal 1.0.0 ;
     dev: literate-programming-cli 0.8.4; litpro-jshint 0.1.0 ")
 

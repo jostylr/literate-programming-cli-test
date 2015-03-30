@@ -10,14 +10,14 @@ var del = require('del');
 var isUtf8 = require('is-utf8');
 var tape = require('tape');
 
+var deepEquals =  require('deep-equal');
+
+
+
 module.exports = function (litpro) {
     if (typeof litpro === "undefined") {
         litpro = 'node ../../node_modules/literate-programming-cli/litpro.js';
     }
-
-    
-  
-
 
     var equals = function (a, b) {
         if (typeof a.equals === 'function') {
@@ -122,7 +122,7 @@ module.exports = function (litpro) {
     
     };
 
-    return function () {
+    var tests = function () {
         var i, n = arguments.length;
 
         for (i = 0; i < n; i += 1) {
@@ -130,5 +130,42 @@ module.exports = function (litpro) {
         }
 
     };
+
+    tests.json =  function (can, bui) {
+            try {
+                can = JSON.parse(can.toString());
+                bui = JSON.parse(bui.toString());
+                return deepEquals(can, bui);
+            } catch (e) {
+                console.log(e);
+                return false;
+            }
+        };
+
+    tests.split = function (optional) {
+        var equals = optional || function (a, b) {
+            return a === b;
+        };
+    
+        return function (can , bui) {
+            can = can.toString().split("\n").sort();
+            bui = bui.toString().split("\n").sort();
+            
+            if ( can.length !== bui.length) {
+                return false;
+            }
+    
+            var i, n = can.length;
+            for (i = 0; i < n; i +=1) {
+                if ( !  equals(can[i], bui[i]) ) {
+                    return false;
+                } 
+            }
+    
+            return true;
+        };
+    };
+
+    return tests;
 
 };

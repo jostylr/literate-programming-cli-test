@@ -7,5 +7,7 @@ tests(
             bui = bui.toString().replace("hi", "bye");
             return bui === can.toString();
         }
-    }]
+    }],
+    ["json",  "", {   "stuff.json" : tests.json }],
+    ["scrambled", "", { "scrambled.txt" : tests.split() }]
 );
