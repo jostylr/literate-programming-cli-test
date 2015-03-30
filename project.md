@@ -1,4 +1,4 @@
-# [literate-programming-cli-test](# "version:0.1.0; Testing framework for literate-programming-cli")
+# [literate-programming-cli-test](# "version:0.2.0; Testing framework for literate-programming-cli")
 
  
 * [index.js](#testing "save: | jshint") This runs the test for this module.
@@ -77,7 +77,7 @@ in it should match the generated stuff in the top directory.
             var i, n = arguments.length;
 
             for (i = 0; i < n; i += 1) {
-                test(tape, arguments[i][0], arguments[i][1]);               
+                test(tape, arguments[i][0], arguments[i][1], arguments[i][2]);               
             }
 
         };
@@ -95,8 +95,9 @@ cache, out.test, and err.test.
 
 After reseting, the test executes the command. Then it checks the directories.
 
-    function (tape, dir, command) {
+    function (tape, dir, command, matcher) {
         command = command || '' ;
+        matcher = matcher || {};
         var reset;
 
         tape(dir, function (t) {
@@ -127,7 +128,7 @@ After reseting, the test executes the command. Then it checks the directories.
                 }
                 write(resolve("tests", dir, "out.test"), stdout );
                 write(resolve("tests", dir, "err.test"), stderr);
-                var results = checkdir(dir);
+                var results = checkdir(dir, matcher);
                 var bad = results[1];
                 var msg = "CHECKED: " + results[0];
                 if (bad.length > 0) {
@@ -149,7 +150,7 @@ After reseting, the test executes the command. Then it checks the directories.
 Inspired by [assert-dir-equal](https://github.com/ianstormtaylor/assert-dir-equal) 
 
 
-    function (dir) {
+    function (dir, matcher) {
         var ret = [];
         var count = 0;
         var expecteds = readdir( resolve("tests", dir, "canonical") );
@@ -157,7 +158,8 @@ Inspired by [assert-dir-equal](https://github.com/ianstormtaylor/assert-dir-equa
             count += 1;
             var e = read(resolve("tests", dir, "canonical", rel));
             var a = read(resolve("tests", dir, rel));
-            if (!(equals(e, a))) {
+            var check = matcher[rel] || equals;
+            if (!(check(e, a))) {
                 if (isUtf8(e) && isUtf8(a) ) {
                     ret.push(rel + "\n~~~Expected\n" + e.toString() + "\n~~~Actual\n" + 
                         a.toString() + "\n---\n\n");
@@ -247,7 +249,13 @@ A simple test file
     var tests = require('./index.js')("");
 
     tests( 
-        ["copy", "cp simple.txt copy.txt" ]
+        ["copy", "cp simple.txt copy.txt" ],
+        ["replace", "cp simple.txt copy.txt", {
+            "copy.txt" : function (can, bui) {
+                bui = bui.toString().replace("hi", "bye");
+                return bui === can.toString();
+            }
+        }]
     );
 
 
@@ -434,5 +442,5 @@ A travis.yml file for continuous test integration!
 
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
     deps: tape 3.5.0, del 1.1.1, is-utf8 0.2.0;
-    dev: literate-programming-cli 0.8.0; litpro-jshint 0.1.0 ")
+    dev: literate-programming-cli 0.8.4; litpro-jshint 0.1.0 ")
 

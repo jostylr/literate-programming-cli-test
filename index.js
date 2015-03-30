@@ -55,7 +55,7 @@ module.exports = function (litpro) {
     
         return files;
         };
-    var checkdir = function (dir) {
+    var checkdir = function (dir, matcher) {
         var ret = [];
         var count = 0;
         var expecteds = readdir( resolve("tests", dir, "canonical") );
@@ -63,7 +63,8 @@ module.exports = function (litpro) {
             count += 1;
             var e = read(resolve("tests", dir, "canonical", rel));
             var a = read(resolve("tests", dir, rel));
-            if (!(equals(e, a))) {
+            var check = matcher[rel] || equals;
+            if (!(check(e, a))) {
                 if (isUtf8(e) && isUtf8(a) ) {
                     ret.push(rel + "\n~~~Expected\n" + e.toString() + "\n~~~Actual\n" + 
                         a.toString() + "\n---\n\n");
@@ -74,8 +75,9 @@ module.exports = function (litpro) {
         });
         return [count, ret];
     };
-    var test = function (tape, dir, command) {
+    var test = function (tape, dir, command, matcher) {
         command = command || '' ;
+        matcher = matcher || {};
         var reset;
     
         tape(dir, function (t) {
@@ -106,7 +108,7 @@ module.exports = function (litpro) {
                 }
                 write(resolve("tests", dir, "out.test"), stdout );
                 write(resolve("tests", dir, "err.test"), stderr);
-                var results = checkdir(dir);
+                var results = checkdir(dir, matcher);
                 var bad = results[1];
                 var msg = "CHECKED: " + results[0];
                 if (bad.length > 0) {
@@ -124,7 +126,7 @@ module.exports = function (litpro) {
         var i, n = arguments.length;
 
         for (i = 0; i < n; i += 1) {
-            test(tape, arguments[i][0], arguments[i][1]);               
+            test(tape, arguments[i][0], arguments[i][1], arguments[i][2]);               
         }
 
     };
