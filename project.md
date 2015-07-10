@@ -508,5 +508,5 @@ A travis.yml file for continuous test integration!
 
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
     deps: tape 4.0.0, del 1.1.1, is-utf8 0.2.0, deep-equal 1.0.0 ;
-    dev: literate-programming-cli 0.8.6; litpro-jshint 0.1.0 ")
+    dev: literate-programming-cli 0.9.1; litpro-jshint 0.1.0 ")
 
