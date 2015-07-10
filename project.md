@@ -1,4 +1,4 @@
-# [literate-programming-cli-test](# "version:0.3.0; Testing framework for literate-programming-cli")
+# [literate-programming-cli-test](# "version:0.4.0; Testing framework for literate-programming-cli")
 
  
 * [index.js](#testing "save: | jshint") This runs the test for this module.
@@ -7,7 +7,7 @@
 * [README.md](#readme "save:| raw ## README, !--- | sub \n\ #, # |trim ") The standard README.
 * [package.json](#npm-package "save: | jshint") The requisite package file for a npm project. 
 * [TODO.md](#todo "save: | raw ## TODO, !--- ") A list of growing and shrinking items todo.
-* [LICENSE-MIT](#license-mit "save:  ") The MIT license as I think that is the standard in the node community. 
+* [LICENSE](#license-mit "save:  ") The MIT license as I think that is the standard in the node community. 
 * [.npmignore](#npmignore "save: ")
 * [.gitignore](#gitignore "save: ")
 * [.travis.yml](#travis "save: ")
@@ -63,7 +63,7 @@ in it should match the generated stuff in the top directory.
 
 
 
-    module.exports = function (litpro) {
+    module.exports = function (litpro, flag) {
         if (typeof litpro === "undefined") {
             litpro = 'node ../../node_modules/literate-programming-cli/litpro.js';
         }
@@ -148,6 +148,9 @@ cache, out.test, and err.test.
 
 After reseting, the test executes the command. Then it checks the directories.
 
+If "hideConsole" is passed in as second argument, then no console logs will
+appear. This can be handy when testing logging messages. 
+
     function (tape, dir, command, matcher) {
         command = command || '' ;
         matcher = matcher || {};
@@ -178,6 +181,10 @@ After reseting, the test executes the command. Then it checks the directories.
             exec(cmd, function (err, stdout, stderr)  {
                 if (err) {
                     console.log(err);
+                }
+                if (!(flag &&  (flag.indexOf("hideConsole") !== -1) )) {
+                    console.log(stdout);
+                    console.log(stderr);
                 }
                 write(resolve("tests", dir, "out.test"), stdout );
                 write(resolve("tests", dir, "err.test"), stderr);
@@ -417,12 +424,7 @@ The requisite npm package file.
       "bugs": {
         "url": "https://github.com/_`g::gituser`/_`g::docname`/issues"
       },
-      "licenses": [
-        {
-          "type": "MIT",
-          "url": "https://github.com/_`g::gituser`/_`g::docname`/blob/master/LICENSE-MIT"
-        }
-      ],
+      "license": "MIT",
       "main": "index.js",
       "engines": {
         "node": ">=0.10"
@@ -505,6 +507,6 @@ A travis.yml file for continuous test integration!
 
 
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
-    deps: tape 3.5.0, del 1.1.1, is-utf8 0.2.0, deep-equal 1.0.0 ;
-    dev: literate-programming-cli 0.8.4; litpro-jshint 0.1.0 ")
+    deps: tape 4.0.0, del 1.1.1, is-utf8 0.2.0, deep-equal 1.0.0 ;
+    dev: literate-programming-cli 0.8.6; litpro-jshint 0.1.0 ")
 

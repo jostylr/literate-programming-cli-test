@@ -14,7 +14,7 @@ var deepEquals =  require('deep-equal');
 
 
 
-module.exports = function (litpro) {
+module.exports = function (litpro, flag) {
     if (typeof litpro === "undefined") {
         litpro = 'node ../../node_modules/literate-programming-cli/litpro.js';
     }
@@ -105,6 +105,10 @@ module.exports = function (litpro) {
             exec(cmd, function (err, stdout, stderr)  {
                 if (err) {
                     console.log(err);
+                }
+                if (!(flag &&  (flag.indexOf("hideConsole") !== -1) )) {
+                    console.log(stdout);
+                    console.log(stderr);
                 }
                 write(resolve("tests", dir, "out.test"), stdout );
                 write(resolve("tests", dir, "err.test"), stderr);

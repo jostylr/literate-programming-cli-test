@@ -1,7 +1,7 @@
 {
   "name": "literate-programming-cli-test",
   "description": "Testing framework for literate-programming-cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "homepage": "https://github.com/jostylr/literate-programming-cli-test",
   "author": {
     "name": "James Taylor",
@@ -14,24 +14,19 @@
   "bugs": {
     "url": "https://github.com/jostylr/literate-programming-cli-test/issues"
   },
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://github.com/jostylr/literate-programming-cli-test/blob/master/LICENSE-MIT"
-    }
-  ],
+  "license": "MIT",
   "main": "index.js",
   "engines": {
     "node": ">=0.10"
   },
   "dependencies":{
-    "tape" : "^3.5.0",
+    "tape" : "^4.0.0",
     "del" : "^1.1.1",
     "is-utf8" : "^0.2.0",
     "deep-equal" : "^1.0.0"
   },
   "devDependencies" : {
-    "literate-programming-cli" : "^0.8.4"
+    "literate-programming-cli" : "^0.8.6"
   },
   "scripts" : { 
     "test" : "node ./test.js"
