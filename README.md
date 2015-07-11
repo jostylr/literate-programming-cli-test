@@ -24,7 +24,14 @@ Typically, install literate-programming-cli as a deve dependency and then the
 default will be correct. Otherwise, supply your command pathway. 
 
 Other than that the default, this probably works to test any command-line
-functionality that generates files and directories.
+functionality that generates files and directories. You can probably pass in
+an empty string to run different entirely different commands. 
+
+There is a second option for the returned module function. If you pass in
+`"hideConsole"`, then any console output is not shown. It is still written to
+`out.test` and `err.test` where one can review it, but this option allows one
+to eliminate seeing all the console stuff when it is irrelevant to one's
+needs. 
 
 The function `tests` expects a sequence of arrays where each entry specifies a
 test whose name is the first entry in the array and that is also the name of
