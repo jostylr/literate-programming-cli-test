@@ -1,4 +1,4 @@
-# [literate-programming-cli-test](# "version:0.4.0; Testing framework for literate-programming-cli")
+# [literate-programming-cli-test](# "version:0.5.0; Testing framework for literate-programming-cli")
 
  
 * [index.js](#testing "save: | jshint") This runs the test for this module.
@@ -20,14 +20,14 @@ super opinionated. Convention rather than configuration.
 
 Each test directory can have the following: 
 
-* out.txt  This should the match the output from running the litpro command.
+* `out.txt`  This should the match the output from running the `litpro` command.
   If none present, the output is ignored.
-* err.txt  Same as out, except it uses standard error
+* `err.txt`  Same as out, except it uses standard error
 * canonical  This is the canonical example directory that should match the
   output. Each directory in canonical and files should match corresponding
   stuff in the top test directory. Normally, this should be build and cache.
   This will not catch extra outputs outside of the canonical directories,
-  e.g., if the litpro generates file bad.txt in the top directory, but bad.txt
+  e.g., if the `litpro` generates file `bad.txt` in the top directory, but `bad.txt`
   is not in the canonical directory, then it will not be seen by this process.
 
 So this little helper handles reading in all of the files and checking the
@@ -45,7 +45,12 @@ The idea is that each test can have its own directory under the `tests`
 directory. The command to execute the literate programming is specified in the
 test and can be whatever is being tested with the files arranged in whatever
 fashion. But there is a special directory of `canonical` for which everything
-in it should match the generated stuff in the top directory. 
+in it should match the generated stuff in the top directory.
+
+This will also set up those directories. If the name starts with `*` then it
+will set it up, using the rest of the name for the test directory and for the
+input for the setup as that name with a `.md` attached to it sitting in the
+tests directory. 
 
     /*global require, module, console*/
 
@@ -54,30 +59,39 @@ in it should match the generated stuff in the top directory.
     var write = fs.writeFileSync;
     var path = require('path');
     var resolve = path.resolve;
+    var sep = path.sep;
     var exec = require('child_process').exec;
     var del = require('del');
     var isUtf8 = require('is-utf8');
     var tape = require('tape');
+    var mkdirp = require('mkdirp');
 
     var deepEquals =  require('deep-equal');
 
 
 
     module.exports = function (litpro, flag) {
-        if (typeof litpro === "undefined") {
-            litpro = 'node ../../node_modules/literate-programming-cli/litpro.js';
+        if ( (typeof litpro === "undefined") || (litpro === true) ) {
+            litpro = 'node ../../node_modules/litpro/litpro.js';
         }
 
         var equals = _":buffer equals";
         var readdir = _":recursive readdir";
         var checkdir = _":checking dir equality";
         var test = _":test";
+        var setup = _":setup";
 
         var tests = function () {
             var i, n = arguments.length;
+            var name;
 
             for (i = 0; i < n; i += 1) {
-                test(tape, arguments[i][0], arguments[i][1], arguments[i][2]);               
+                name = arguments[i][0]; 
+                if (name[0] === "*") {
+                    name = name.slice(1);
+                    setup(name);
+                }
+                test(tape, name, arguments[i][1], arguments[i][2]);               
             }
 
         };
@@ -138,17 +152,59 @@ This is constructor whose argument is the matcher.
         };
     }
 
+[setup]() 
+
+This sets up a test directory. It simply splits on lines with `---` at the
+beginning of a line. The first line should not have the dashes. It can have a
+colon or an equals, depending, or nothing if the initial text is not to be
+saved. A colon after the dashes will be an input file, saved in the top
+directory of the test file. If there is an equals sign, then that is an output
+to be put in canonical. 
+
+    function (name) {
+        try {
+            var input = read(resolve( "tests", name + ".md"), 
+                {encoding:"utf8"} ).split("\n---");
+
+            if (input.length === 0) {
+                console.log("file empty" + name);
+                return ;
+            }
+
+            //this creates all directories in path so top and can
+            mkdirp.sync( resolve("tests", name, "canonical") );
+
+            input.forEach( function (el) {
+                var  path, ind = el.indexOf("\n");
+                var fname = el.slice(1, ind).trim();
+                if (el[0] === ":") {
+                    path = resolve("tests", name, fname);
+                } else if (el[0] === "=") {
+                    path = resolve("tests", name, "canonical", fname);
+                } else {
+                    return;
+                }
+                mkdirp.sync( path.slice(0, path.lastIndexOf(sep) ) );
+                write(path, el.slice(ind+1)); 
+                
+            });
+
+        } catch (e) {
+            console.log("setup failure:" + name, e, e.stack);
+        }
+    }
+
 
 [test]()
 
-For each test, we execute the litpro command. We store the stdout and stderr
+For each test, we execute the `litpro` command. We store the `stdout` and `stderr`
 in out.test and err.test. There is also a reset.test file that will be used to
-clean up the root directory before doin the test; the default are the build,
+clean up the root directory before doing the test; the default are the build,
 cache, out.test, and err.test. 
 
 After reseting, the test executes the command. Then it checks the directories.
 
-If "hideConsole" is passed in as second argument, then no console logs will
+If `"hideConsole"` is passed in as second argument, then no console logs will
 appear. This can be handy when testing logging messages. 
 
     function (tape, dir, command, matcher) {
@@ -216,16 +272,20 @@ Inspired by [assert-dir-equal](https://github.com/ianstormtaylor/assert-dir-equa
         var expecteds = readdir( resolve("tests", dir, "canonical") );
         expecteds.forEach(function(rel){
             count += 1;
-            var e = read(resolve("tests", dir, "canonical", rel));
-            var a = read(resolve("tests", dir, rel));
-            var check = matcher[rel] || equals;
-            if (!(check(e, a))) {
-                if (isUtf8(e) && isUtf8(a) ) {
-                    ret.push(rel + "\n~~~Expected\n" + e.toString() + "\n~~~Actual\n" + 
-                        a.toString() + "\n---\n\n");
-                } else {
-                    ret.push(rel);
+            try {
+                var e = read(resolve("tests", dir, "canonical", rel));
+                var a = read(resolve("tests", dir, rel));
+                var check = matcher[rel] || equals;
+                if (!(check(e, a))) {
+                    if (isUtf8(e) && isUtf8(a) ) {
+                        ret.push(rel + "\n~~~Expected\n" + e.toString() + "\n~~~Actual\n" + 
+                            a.toString() + "\n---\n\n");
+                    } else {
+                        ret.push(rel);
+                    }
                 }
+            } catch (err) {
+                ret.push(["error with " + rel, err, err.stack]);
             }
         });
         return [count, ret];
@@ -286,7 +346,9 @@ For v.10 and below we need to manually check the buffer equality. From
 ## lprc
 
 
-The lprc file. 
+The `lprc` file. 
+
+    /*global require, module */
 
     module.exports = function(Folder, args) {
 
@@ -294,7 +356,7 @@ The lprc file.
             args.file = ["project.md"];
         }
         args.build = ".";
-         args.src = ".";
+        args.src = ".";
 
         require('litpro-jshint')(Folder, args);
 
@@ -305,8 +367,11 @@ The lprc file.
 
 A simple test file
 
+    /*global require */
     
-    var tests = require('./index.js')("");
+    var testhan = require('./index.js');
+
+    var tests = testhan("", "hideConsole");
 
     tests( 
         ["copy", "cp simple.txt copy.txt" ],
@@ -319,6 +384,14 @@ A simple test file
         ["json",  "", _":json"],
         ["scrambled", "", _":scrambled"]
     );
+
+    var test = testhan();
+
+    test(["*cmd"]);
+    
+    test = testhan(true, "hideConsole");
+
+    test(["*cmd"]);
 
 
 [json]() 
@@ -340,7 +413,7 @@ Testing the json stuff
  # literate-programming-cli-test 
 
 This provides the testing framework for literate-programming command line
-client and its plugsin. 
+client and its plugins. 
 
 This should be a developer dependency in the package. You can use 
 `npm install literate-programming-cli-test --save-dev` if you like. 
@@ -359,18 +432,20 @@ Then in the test script, you could do something like
    
 The require function returns a function that generates the tests function
 using the command provided to execute the literate-programming command.
-Typically, install literate-programming-cli as a deve dependency and then the
-default will be correct. Otherwise, supply your command pathway. 
+Typically, install [litpro](https://github.com/jostylr/litpro) as a dev
+dependency and then the default will be correct. Otherwise, supply your
+command pathway. 
 
-Other than that the default, this probably works to test any command-line
-functionality that generates files and directories. You can probably pass in
+Other than the default, this probably works to test any command-line
+functionality that generates files and directories. You can pass in
 an empty string to run different entirely different commands. 
 
 There is a second option for the returned module function. If you pass in
 `"hideConsole"`, then any console output is not shown. It is still written to
 `out.test` and `err.test` where one can review it, but this option allows one
 to eliminate seeing all the console stuff when it is irrelevant to one's
-needs. 
+needs. Passing in `true` to the first argument preserves the default
+command if you need to have the second argument by itself. 
 
 The function `tests` expects a sequence of arrays where each entry specifies a
 test whose name is the first entry in the array and that is also the name of
@@ -393,7 +468,85 @@ folder. If `canonical/great.txt` exists, then the test will look for
 are checked. Thus, this does not check for making extraneous files in the
 directory. 
 
-    
+ ### Beyond Strict Equality
+
+The above describes using this as run this command and compare the resulting
+files using equality. 
+
+Sometimes that's not good enough. Sometimes you have `JSON` that might get
+stored differently, or lines in a different order. So the third argument for
+an array line specifies an object that, per file name, will take in a function
+that takes in the two text from the files and comes up with a true or false
+value. The signature is `function (canonical, build)` so (expected, actual)
+text setup. 
+
+The function has some methods that help:  `split` will split the lines and
+make sure that equal lines are present, though the ordering may be different.
+This is actually a function that gets instantiated and one can pass in a line
+comparator to make it different than equality. 
+
+The other function is `json` which will parse both files as `JSON` and see if
+they have deep equality. 
+
+       
+    var tests = require('./index.js')("", "hideConsole");
+
+    tests( 
+        ["copy", "cp simple.txt copy.txt" ],
+        ["replace", "cp simple.txt copy.txt", {
+            "copy.txt" : function (can, bui) {
+                bui = bui.toString().replace("hi", "bye");
+                return bui === can.toString();
+            }
+        }],
+        ["json",  "", {   "stuff.json" : tests.json }],
+        ["scrambled", "",  { "scrambled.txt" : tests.split() }]
+    );
+
+ ### Automated Setup
+
+The design of this plugin has a lot of files to make a test. I don't like
+that. So we can also have the plugin parse out a single file into multiple
+files. 
+
+To trigger this, use `*name` for the first argument in the test item's array.
+Then it will look for `name.md` in the tests directory and create, if
+necessary, the directory `tests/name` and populate it with the files found in
+the `name.md` Files are separated by `---filename` for inputs (sitting in the
+top `name` directory or `===filename` for those that should be in the
+`canonical` directory. Subdirectories are fine, just use `/` for them.
+
+    ["*cmd"]
+
+And then in cmd.md
+
+    :lprc.js
+    if (args.file.length === 0) {
+        args.file = ["project.md"];
+    }
+    args.build = ".";
+    args.src = ".";
+
+    require('litpro-jshint')(Folder, args);
+    ---:project.md
+
+    Great
+
+        some code
+
+    [dude.txt](# "save:")
+
+    ---=dude.txt
+    some code
+    ---=out.test
+    (whatever the output oughta be ... run it once and past it in if it looks
+    good!)
+    ---=err.test
+    Maybe if testing error issues
+
+So that could be a test specification and everything should be good to go. 
+
+
 
  ## LICENSE
 
@@ -458,6 +611,8 @@ The requisite npm package file.
     /out.test
     /err.test
     /.checksum
+    tests/cmd/
+
 
 ## npmignore
 
@@ -514,6 +669,7 @@ A travis.yml file for continuous test integration!
 
 
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
-    deps: tape 4.0.0, del 1.1.1, is-utf8 0.2.0, deep-equal 1.0.0 ;
-    dev: literate-programming-cli 0.9.1; litpro-jshint 0.1.0 ")
+    deps: tape 4.0.0, del 1.2.0, is-utf8 0.2.0, deep-equal 1.0.0, 
+          mkdirp 0.5.1;
+    dev: litpro 0.9.1, litpro-jshint 0.1.0 ")
 

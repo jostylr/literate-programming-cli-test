@@ -1,4 +1,8 @@
-var tests = require('./index.js')("");
+/*global require */
+
+var testhan = require('./index.js');
+
+var tests = testhan("", "hideConsole");
 
 tests( 
     ["copy", "cp simple.txt copy.txt" ],
@@ -11,3 +15,11 @@ tests(
     ["json",  "", {   "stuff.json" : tests.json }],
     ["scrambled", "", { "scrambled.txt" : tests.split() }]
 );
+
+var test = testhan();
+
+test(["*cmd"]);
+
+test = testhan(true, "hideConsole");
+
+test(["*cmd"]);

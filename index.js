@@ -5,18 +5,20 @@ var read = fs.readFileSync;
 var write = fs.writeFileSync;
 var path = require('path');
 var resolve = path.resolve;
+var sep = path.sep;
 var exec = require('child_process').exec;
 var del = require('del');
 var isUtf8 = require('is-utf8');
 var tape = require('tape');
+var mkdirp = require('mkdirp');
 
 var deepEquals =  require('deep-equal');
 
 
 
 module.exports = function (litpro, flag) {
-    if (typeof litpro === "undefined") {
-        litpro = 'node ../../node_modules/literate-programming-cli/litpro.js';
+    if ( (typeof litpro === "undefined") || (litpro === true) ) {
+        litpro = 'node ../../node_modules/litpro/litpro.js';
     }
 
     var equals = function (a, b) {
@@ -61,16 +63,20 @@ module.exports = function (litpro, flag) {
         var expecteds = readdir( resolve("tests", dir, "canonical") );
         expecteds.forEach(function(rel){
             count += 1;
-            var e = read(resolve("tests", dir, "canonical", rel));
-            var a = read(resolve("tests", dir, rel));
-            var check = matcher[rel] || equals;
-            if (!(check(e, a))) {
-                if (isUtf8(e) && isUtf8(a) ) {
-                    ret.push(rel + "\n~~~Expected\n" + e.toString() + "\n~~~Actual\n" + 
-                        a.toString() + "\n---\n\n");
-                } else {
-                    ret.push(rel);
+            try {
+                var e = read(resolve("tests", dir, "canonical", rel));
+                var a = read(resolve("tests", dir, rel));
+                var check = matcher[rel] || equals;
+                if (!(check(e, a))) {
+                    if (isUtf8(e) && isUtf8(a) ) {
+                        ret.push(rel + "\n~~~Expected\n" + e.toString() + "\n~~~Actual\n" + 
+                            a.toString() + "\n---\n\n");
+                    } else {
+                        ret.push(rel);
+                    }
                 }
+            } catch (err) {
+                ret.push(["error with " + rel, err, err.stack]);
             }
         });
         return [count, ret];
@@ -125,12 +131,50 @@ module.exports = function (litpro, flag) {
         });
     
     };
+    var setup = function (name) {
+        try {
+            var input = read(resolve( "tests", name + ".md"), 
+                {encoding:"utf8"} ).split("\n---");
+    
+            if (input.length === 0) {
+                console.log("file empty" + name);
+                return ;
+            }
+    
+            //this creates all directories in path so top and can
+            mkdirp.sync( resolve("tests", name, "canonical") );
+    
+            input.forEach( function (el) {
+                var  path, ind = el.indexOf("\n");
+                var fname = el.slice(1, ind).trim();
+                if (el[0] === ":") {
+                    path = resolve("tests", name, fname);
+                } else if (el[0] === "=") {
+                    path = resolve("tests", name, "canonical", fname);
+                } else {
+                    return;
+                }
+                mkdirp.sync( path.slice(0, path.lastIndexOf(sep) ) );
+                write(path, el.slice(ind+1)); 
+                
+            });
+    
+        } catch (e) {
+            console.log("setup failure:" + name, e, e.stack);
+        }
+    };
 
     var tests = function () {
         var i, n = arguments.length;
+        var name;
 
         for (i = 0; i < n; i += 1) {
-            test(tape, arguments[i][0], arguments[i][1], arguments[i][2]);               
+            name = arguments[i][0]; 
+            if (name[0] === "*") {
+                name = name.slice(1);
+                setup(name);
+            }
+            test(tape, name, arguments[i][1], arguments[i][2]);               
         }
 
     };
