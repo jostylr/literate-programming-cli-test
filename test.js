@@ -18,7 +18,8 @@ tests(
 
 var test = testhan();
 
-test(["*cmd"]);
+test(["*cmd"],
+     ["*setup"]);
 
 test = testhan(true, "hideConsole");
 

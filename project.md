@@ -1,4 +1,4 @@
-# [literate-programming-cli-test](# "version:0.5.0; Testing framework for literate-programming-cli")
+# [literate-programming-cli-test](# "version:0.5.1; Testing framework for literate-programming-cli")
 
  
 * [index.js](#testing "save: | jshint") This runs the test for this module.
@@ -159,7 +159,13 @@ beginning of a line. The first line should not have the dashes. It can have a
 colon or an equals, depending, or nothing if the initial text is not to be
 saved. A colon after the dashes will be an input file, saved in the top
 directory of the test file. If there is an equals sign, then that is an output
-to be put in canonical. 
+to be put in canonical.
+
+We want to allow natural `---` so we do some work to allow that, getting rid
+of any leading text that is not from a colon or equal split.  We created a
+reversed order array simply to use the 0 entry as the current; the order does
+not matter for file writing (well, unless one is writing the file twice, but
+why do that? -- this goes with the first). 
 
     function (name) {
         try {
@@ -174,19 +180,37 @@ to be put in canonical.
             //this creates all directories in path so top and can
             mkdirp.sync( resolve("tests", name, "canonical") );
 
+
+            var transform = [];
+            var comment = true;
+    
+
             input.forEach( function (el) {
+                if ( (el[0] === ":") || (el[0] === "=") ) {
+                    comment = false;
+                    transform.unshift(el);
+                } else if ( (el[0] === "#" ) || (comment) ) { // comment
+                    comment = true;
+                    return;
+                } else {
+                    transform[0] = transform[0] +  "\n---" + el;
+                    return;
+                }   
+            });
+
+
+            transform.forEach( function (el) {
                 var  path, ind = el.indexOf("\n");
                 var fname = el.slice(1, ind).trim();
                 if (el[0] === ":") {
                     path = resolve("tests", name, fname);
                 } else if (el[0] === "=") {
                     path = resolve("tests", name, "canonical", fname);
-                } else {
-                    return;
+                } else { //shouldn't happen
+                    console.error("error:bad entry in setting up", el);
                 }
                 mkdirp.sync( path.slice(0, path.lastIndexOf(sep) ) );
-                write(path, el.slice(ind+1)); 
-                
+                write(path, el.slice(ind+1) ); 
             });
 
         } catch (e) {
@@ -387,7 +411,8 @@ A simple test file
 
     var test = testhan();
 
-    test(["*cmd"]);
+    test(["*cmd"],
+         ["*setup"]);
     
     test = testhan(true, "hideConsole");
 
@@ -546,7 +571,11 @@ And then in cmd.md
 
 So that could be a test specification and everything should be good to go. 
 
-
+Note that if the leading text has no leading colon or equals, then the text is
+ignored until the first `---:` or `---=`.  Also, `---#` will trigger a block
+that is ignore.  Finally, a plain `---` with no `:=#` following it will be
+appended to the previous block (ignored if the previous block is the leading
+text being ignored). 
 
  ## LICENSE
 
@@ -671,5 +700,5 @@ A travis.yml file for continuous test integration!
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
     deps: tape 4.0.0, del 1.2.0, is-utf8 0.2.0, deep-equal 1.0.0, 
           mkdirp 0.5.1;
-    dev: litpro 0.9.1, litpro-jshint 0.1.0 ")
+    dev: litpro 0.9.2, litpro-jshint 0.1.0 ")
 

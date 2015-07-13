@@ -144,19 +144,37 @@ module.exports = function (litpro, flag) {
             //this creates all directories in path so top and can
             mkdirp.sync( resolve("tests", name, "canonical") );
     
+    
+            var transform = [];
+            var comment = true;
+    
+    
             input.forEach( function (el) {
+                if ( (el[0] === ":") || (el[0] === "=") ) {
+                    comment = false;
+                    transform.unshift(el);
+                } else if ( (el[0] === "#" ) || (comment) ) { // comment
+                    comment = true;
+                    return;
+                } else {
+                    transform[0] = transform[0] +  "\n---" + el;
+                    return;
+                }   
+            });
+    
+    
+            transform.forEach( function (el) {
                 var  path, ind = el.indexOf("\n");
                 var fname = el.slice(1, ind).trim();
                 if (el[0] === ":") {
                     path = resolve("tests", name, fname);
                 } else if (el[0] === "=") {
                     path = resolve("tests", name, "canonical", fname);
-                } else {
-                    return;
+                } else { //shouldn't happen
+                    console.error("error:bad entry in setting up", el);
                 }
                 mkdirp.sync( path.slice(0, path.lastIndexOf(sep) ) );
-                write(path, el.slice(ind+1)); 
-                
+                write(path, el.slice(ind+1) ); 
             });
     
         } catch (e) {

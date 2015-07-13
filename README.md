@@ -132,7 +132,11 @@ And then in cmd.md
 
 So that could be a test specification and everything should be good to go. 
 
-
+Note that if the leading text has no leading colon or equals, then the text is
+ignored until the first `---:` or `---=`.  Also, `---#` will trigger a block
+that is ignore.  Finally, a plain `---` with no `:=#` following it will be
+appended to the previous block (ignored if the previous block is the leading
+text being ignored). 
 ## LICENSE
 
 [MIT-LICENSE](https://github.com/jostylr/literate-programming/blob/master/LICENSE-MIT)

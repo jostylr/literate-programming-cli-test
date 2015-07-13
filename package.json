@@ -1,7 +1,7 @@
 {
   "name": "literate-programming-cli-test",
   "description": "Testing framework for literate-programming-cli",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "homepage": "https://github.com/jostylr/literate-programming-cli-test",
   "author": {
     "name": "James Taylor",
@@ -27,7 +27,7 @@
     "mkdirp" : "^0.5.1"
   },
   "devDependencies" : {
-    "litpro" : "^0.9.1",
+    "litpro" : "^0.9.2",
     "litpro-jshint" : "^0.1.0"
   },
   "scripts" : { 
