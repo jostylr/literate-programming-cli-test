@@ -700,5 +700,5 @@ A travis.yml file for continuous test integration!
 by [James Taylor](https://github.com/jostylr "npminfo: jostylr@gmail.com ; 
     deps: tape 4.0.0, del 1.2.0, is-utf8 0.2.0, deep-equal 1.0.0, 
           mkdirp 0.5.1;
-    dev: litpro 0.9.2, litpro-jshint 0.1.0 ")
+    dev: litpro 0.9.2, litpro-jshint 0.2.1 ")
 
