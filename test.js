@@ -6,6 +6,7 @@ var tests = testhan("", "hideConsole");
 
 tests( 
     ["copy", "cp simple.txt copy.txt" ],
+    ["encoding", "echo just" ],
     ["replace", "cp simple.txt copy.txt", {
         "copy.txt" : function (can, bui) {
             bui = bui.toString().replace("hi", "bye");
