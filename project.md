@@ -642,6 +642,8 @@ The requisite npm package file.
     /err.test
     /.checksum
     tests/cmd/
+    tests/encoding/err.test
+    tests/encoding/out.test
 
 
 ## npmignore
@@ -662,6 +664,7 @@ The requisite npm package file.
 
 A travis.yml file for continuous test integration!
 
+    sudo: false
     language: node_js
     node_js:
       - "0.10"

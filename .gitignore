@@ -6,3 +6,5 @@ node_modules/
 /err.test
 /.checksum
 tests/cmd/
+tests/encoding/err.test
+tests/encoding/out.test
